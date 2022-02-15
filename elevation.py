@@ -56,6 +56,9 @@ def jumpFlood(seeds, XYZ):
     return voronoi, borders, seedCoords
 
 def dist(p1, p2, XYZ):
+    # We only care about the magnitude of the geodesic distance
+    # which means we can ignore acos and sqrt as they don't affect
+    # the result provided we multiply by -1
     xyz1 = XYZ[p1]
     xyz2 = XYZ[p2]
     return -np.dot(xyz1, xyz2)/(np.dot(xyz1, xyz1)*np.dot(xyz2,xyz2))
