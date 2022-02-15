@@ -11,8 +11,8 @@ with open(file="C:\\Users\\domin\\Documents\\Projects\\Python\\3D Planet Git Rea
             if arr[i] == '\n' or arr[i] == '': continue
             boundaryBearings[int(arr[i])] = float(arr[0])
 
-def jumpFlood(seeds, Xs, Ys, Zs):
-    shape = Xs.shape
+def jumpFlood(seeds, XYZ):
+    shape = XYZ.shape[:2]
     voronoi = np.full(shape, -1)
     borders = np.full_like(voronoi, 0)
     seedCoords = []
@@ -26,61 +26,42 @@ def jumpFlood(seeds, Xs, Ys, Zs):
     # Extra step is so borders is correct
     steps = int(np.log2(N))+2
     # Start jumping
-    neighbours = []
-    cardinals = []
     for step in range(steps):
         jump = int(np.ceil(2**(np.log2(N)-1-step)))
         for i in range(shape[0]):
             for j in range(shape[1]):
-                newSeed = voronoi[i,j]
-                neighbours.clear()
-                cardinals.clear()
+                cardinals = []
+                bestDistance = 9999
+                bestSeed = -1
                 last = step == steps-1
-                if newSeed != -1:
-                    if i - jump >= 0:
-                        # top
-                        seed = updateSeed(voronoi, seedCoords, (i - jump, j), newSeed, Xs, Ys, Zs)
-                        cardinals.append(seed)
-                        neighbours.append(seed)
-                        if j - jump >= 0:
-                            # top left
-                            neighbours.append(updateSeed(voronoi, seedCoords, (i - jump, j - jump), newSeed, Xs, Ys, Zs))
-                        if j + jump < shape[1]:
-                            # top right
-                            neighbours.append(updateSeed(voronoi, seedCoords, (i - jump, j + jump), newSeed, Xs, Ys, Zs))
-                    if j - jump >= 0:
-                        # mid left
-                        seed = updateSeed(voronoi, seedCoords, (i, j - jump), newSeed, Xs, Ys, Zs)
-                        cardinals.append(seed)
-                        # neighbours.append(seed)
-                    if j + jump < shape[1]:
-                        # mid right
-                        seed = updateSeed(voronoi, seedCoords, (i, j + jump), newSeed, Xs, Ys, Zs)
-                        cardinals.append(seed)
-                        # neighbours.append(seed)
-                    if i + jump < shape[0]:
-                        # bottom
-                        seed = updateSeed(voronoi, seedCoords, (i + jump, j), newSeed, Xs, Ys, Zs)
-                        cardinals.append(seed)
-                        neighbours.append(seed)
-                        if j - jump >= 0:
-                            # bottom left
-                            neighbours.append(updateSeed(voronoi, seedCoords, (i + jump, j - jump), newSeed, Xs, Ys, Zs))
-                        if j + jump < shape[1]:
-                            # bottom right
-                            neighbours.append(updateSeed(voronoi, seedCoords, (i + jump, j + jump), newSeed, Xs, Ys, Zs))
-                    # mid
-                    neighbours.append(updateSeed(voronoi, seedCoords, (i, j), newSeed, Xs, Ys, Zs))
-
+                for v in range(-1, 2):
+                    inew = i+v*jump
+                    if inew < 0 or inew >= shape[0]:
+                        continue
+                    for u in range(-1, 2):
+                        jnew = (j+u*jump)%shape[1]
+                        sampleSeed = voronoi[inew,jnew]
+                        if (sampleSeed == -1):
+                            continue
+                        distance = dist((i, j), seedCoords[sampleSeed], XYZ)
+                        if distance < bestDistance:
+                            bestSeed = sampleSeed
+                            bestDistance = distance
+                        if u*v == 0 and u+v != 0:
+                            cardinals.append(sampleSeed)
+                voronoi[i,j] = bestSeed
                 if last:
                     neighbours_set = set(cardinals)
                     if len(neighbours_set) >= 2: borders[i,j] = 1
     return voronoi, borders, seedCoords
 
-def dist(p1, p2, Xs, Ys, Zs):
-    xyz1 = np.array([Xs[p1[0],p1[1]], Ys[p1[0],p1[1]], Zs[p1[0],p1[1]]])
-    xyz2 = np.array([Xs[p2[0],p2[1]], Ys[p2[0],p2[1]], Zs[p2[0],p2[1]]])
-    return utils.gCircleDist(xyz1, xyz2)
+def dist(p1, p2, XYZ):
+    # We only care about the magnitude of the geodesic distance
+    # which means we can ignore acos and sqrt as they don't affect
+    # the result provided we multiply by -1
+    xyz1 = XYZ[p1]
+    xyz2 = XYZ[p2]
+    return -np.dot(xyz1, xyz2)/(np.dot(xyz1, xyz1)*np.dot(xyz2,xyz2))
 
 def updateSeed(voronoi, seedCoords, point, newSeed, Xs, Ys, Zs):
     seed = voronoi[point]

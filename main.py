@@ -17,12 +17,13 @@ lons = np.arange(-180+dlon/2., 180+dlon/2., dlon)
 R = 6371 # km
 Lat, Lon = np.meshgrid(lats, lons, indexing='ij')
 Xs, Ys, Zs = utils.latLonRToXYZ(Lat, Lon, R)
+XYZ = np.dstack((Xs, Ys, Zs))
 #X, Y = projections.winkelTripel(Lat, Lon)
 
 seeds = 8
 alpha = 0.5
 time = utils.intervalMessage(time, "setup:")
-voronoi, borders, seedCoords = elevation.jumpFlood(seeds, Xs, Ys, Zs)
+voronoi, borders, seedCoords = elevation.jumpFlood(seeds, XYZ)
 time = utils.intervalMessage(time, "jump flood voronoi:")
 dijkstra = elevation.dijkstraMap(voronoi, borders, seedCoords)
 time = utils.intervalMessage(time, "dijkstra:")
@@ -37,14 +38,16 @@ vxs = [Lon[i,j] for (i,j) in seedCoords]
 us = [v[0] for v in velocitiesUV]
 vs = [v[1] for v in velocitiesUV]
 fig, ((ax0, ax1), (ax2, ax3)) = plt.subplots(2, 2)
-visualisation.colourAndVectorMap(Lon, Lat, boundaries, vxs, vys, us, vs, 'rainbow', fig=fig, ax=ax0)
-visualisation.terrainMap(Lon, Lat, height, min_h, max_h, fig=fig, ax=ax1)
+visualisation.colourAndVectorMap(Lon, Lat, voronoi, vxs, vys, us, vs, 'rainbow', fig=fig, ax=ax0)
+visualisation.colourAndVectorMap(Lon, Lat, boundaries, vxs, vys, us, vs, 'rainbow', fig=fig, ax=ax1)
 visualisation.colourAndVectorMap(Lon, Lat, rawHeight, vxs, vys, us, vs, 'rainbow', fig=fig, ax=ax2)
-ax1.contour(Lon, Lat, height, colors='black', levels=[0,])
+visualisation.terrainMap(Lon, Lat, height, min_h, max_h, fig=fig, ax=ax3)
 ax2.contour(Lon, Lat, rawHeight, colors='black', levels=[0,])
-ax0.set_title("boundaries")
-ax1.set_title("height")
+ax3.contour(Lon, Lat, height, colors='black', levels=[0,])
+ax0.set_title("voronoi")
+ax1.set_title("boundaries")
 ax2.set_title("raw height")
+ax3.set_title("elevation")
 utils.intervalMessage(time, "plotting:")
 utils.intervalMessage(time0, "total time:")
 plt.show()

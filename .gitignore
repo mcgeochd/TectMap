@@ -1,0 +1,6 @@
+# Ignore graphics stuff
+*.glsl
+*.frag
+*.vert
+sphere_elevation.py
+graphical_elevation.py
