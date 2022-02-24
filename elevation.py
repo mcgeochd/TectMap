@@ -1,10 +1,11 @@
 import numpy as np
 import utils
 import elevation
-from noise import perlin
+import ctypes
+import opensimplex
 
 boundaryBearings = {}
-with open(file="C:\\Users\\domin\\Documents\\Projects\\Python\\3D Planet Git Ready\\boundaryBearings.csv", encoding='utf-8-sig') as f:
+with open(file='./boundaryBearings.csv', encoding='utf-8-sig') as f:
     for l in f.readlines(): 
         arr = l.split(',')
         for i in range(1,len(arr)):
@@ -318,11 +319,12 @@ def voronoiPlateAreas(voronoi, seeds, areaProportions):
 class noiseMap:
 
     def __init__(self):
-        self.simplex = perlin.SimplexNoise()
-        self.simplex.randomize()
+        # initializing opensimplex seed with random value in LLONG_MIN LLONG_MAX range 
+        opensimplex.seed(np.random.randint(-ctypes.c_uint(-1).value // 2,
+                                           ctypes.c_uint(-1).value // 2))
 
         self.heights = []
-        with open(file="C:\\Users\\domin\\Documents\\Projects\\Python\\3D Planet\\hypso2.txt") as f:
+        with open(file='./hypso2.txt') as f:
             for l in f.readlines(): self.heights.extend(l.split())
 
     def fBm(self, x, y, z, freq, octs):
@@ -333,7 +335,7 @@ class noiseMap:
         val = 0
         for o in range(octs):
             mod = 2**o
-            val += 0.5**o * self.simplex.noise3(x*mod, y*mod, z*mod)
+            val += 0.5 ** o * opensimplex.noise3(x * mod, y * mod, z * mod)
         return val
 
     def hypso(self, x, max_height, min_height):
