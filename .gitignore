@@ -1,3 +1,5 @@
+# Ignore pycache byte-code files
+*.pyc
 # Ignore graphics stuff
 *.glsl
 *.frag
